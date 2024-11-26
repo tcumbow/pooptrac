@@ -275,7 +275,7 @@ Top priority is quick and easy data entry.
                 addEvent(eventToSubmit);
                 eventEntry_initialize();
                 ">Submit</button>
-            <div style="align-self: center;">V4</div>
+            <div style="align-self: center;">V5</div>
         </div>
         <div id="event-tags-added">
             <!-- Tags added to the event will be displayed here as buttons (click to remove) -->
@@ -324,7 +324,7 @@ Top priority is quick and easy data entry.
 
         </script>
         <div id="event-search-or-create" style="display: flex; flex-direction: row;">
-            <input id="event-search" type="text" placeholder="Search or create tag" oninput="eventEntry_search_oninput()" onkeypress="if(event.key === 'Enter') eventEntry_search_addManuallyEnteredTag()" />
+            <input id="event-search" type="text" placeholder="Search or create tag" oninput="eventEntry_search_oninput()" onkeypress="if(event.key === 'Enter') eventEntry_search_addManuallyEnteredTag()" style="border-radius: 0px;" />
             <button id="event-add-tag" class="event-add-tag-button" onclick="eventEntry_search_addManuallyEnteredTag()">+</button>
                 <script> // eventEntry_search functions
                     async function eventEntry_search_clear() {
