@@ -327,12 +327,12 @@ Top priority is quick and easy data entry.
                         document.getElementById('event-search').value = '';
                     }
                     async function eventEntry_search_oninput() {
-                        const partialTag = document.getElementById('event-search').value;
+                        const partialTag = document.getElementById('event-search').value.toLowerCase();
                         eventEntry_suggestionsDiv_clear();
                         eventEntry_suggestionsDiv_populate(await getAutocompletePossibilitiesForPartiallyEnteredTag(partialTag));
                     }
                     async function eventEntry_search_addManuallyEnteredTag() {
-                        const tag = document.getElementById('event-search').value;
+                        const tag = document.getElementById('event-search').value.trim().toLowerCase();
                         eventEntry_tagsAdded_add(tag);
                         eventEntry_search_clear();
                         eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
