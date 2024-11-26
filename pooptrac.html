@@ -252,13 +252,19 @@ Top priority is quick and easy data entry.
                 const eventsRequest = eventsStore.getAll();
                 const tagsRequest = tagsStore.getAll();
                 const data = {};
-                Promise.all([eventsRequest, tagsRequest]).then(([events, tags]) => {
-                    data.events = events;
-                    data.tags = tags;
-                    resolve(JSON.stringify(data, null, 2));
-                }).catch((error) => {
+                eventsRequest.onsuccess = () => {
+                    data.events = eventsRequest.result;
+                    tagsRequest.onsuccess = () => {
+                        data.tags = tagsRequest.result;
+                        resolve(JSON.stringify(data, null, 2));
+                    };
+                    tagsRequest.onerror = (error) => {
+                        reject(error);
+                    };
+                };
+                eventsRequest.onerror = (error) => {
                     reject(error);
-                });
+                };
             });
         }
 
@@ -270,14 +276,15 @@ Top priority is quick and easy data entry.
     <div id="event" style="display: flex; flex-direction: column;">
         <div id="event-buttons" style="display: flex; flex-direction: row;">
             <button id="event-burger" onclick="
-                alert('Not implemented yet');
+                document.getElementById('event').style.display = 'none';
+                document.getElementById('export').style.display = 'flex';
                 ">☰</button>
             <button id="event-submit" onclick="
                 const eventToSubmit = { timestamp: Date.now(), ...eventEntry_tagsAdded };
                 addEvent(eventToSubmit);
                 eventEntry_initialize();
                 ">Submit</button>
-            <div style="align-self: center;">V5</div>
+            <div style="align-self: center;">V6</div>
         </div>
         <div id="event-tags-added">
             <!-- Tags added to the event will be displayed here as buttons (click to remove) -->
@@ -394,6 +401,17 @@ Top priority is quick and easy data entry.
         }
         eventEntry_initialize();
     </script>
+
+    <div id="export" style="display: none; flex-direction: column;">
+        <textarea id="export-textarea" style="width: 100%; height: 100%;"></textarea>
+        <button id="export-button" onclick="">Export</button>
+        <script>
+            document.getElementById("export-button").onclick = async () => {
+                const data = await exportAllDataAsJson();
+                document.getElementById("export-textarea").value = data;
+            };
+        </script>
+    </div>
 </body>
 
 </html>
