@@ -67,7 +67,7 @@ Top priority is quick and easy data entry.
             font-size: 1em;
         }
 
-        #event-add-tag {
+        .event-add-tag-button {
             padding: 10px;
             font-size: 1em;
             border-radius: 0px;
@@ -326,7 +326,7 @@ Top priority is quick and easy data entry.
         </script>
         <div id="event-search-or-create" style="display: flex; flex-direction: row;">
             <input id="event-search" type="text" placeholder="Search or create tag" oninput="eventEntry_search_oninput()" />
-            <button id="event-add-tag" onclick="eventEntry_search_addManuallyEnteredTag()">+</button>
+            <button id="event-add-tag" class="event-add-tag-button" onclick="eventEntry_search_addManuallyEnteredTag()">+</button>
                 <script> // eventEntry_search functions
                     async function eventEntry_search_clear() {
                         document.getElementById('event-search').value = '';
