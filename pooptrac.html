@@ -25,6 +25,11 @@ Top priority is quick and easy data entry.
             width: calc(100dvw - 16px);
         }
 
+        button {
+            font-weight: bold;
+            font-color: black;
+        }
+
         #event {
         }
 
@@ -37,16 +42,19 @@ Top priority is quick and easy data entry.
             margin: 0 5px;
             padding: 10px;
             font-size: 1em;
+            border: 1px solid black;
+            border-radius: 0px;
         }
 
         #event-tags-added {
             margin-bottom: 10px;
         }
-
-        #event-tags-added .tag-added {
+        
+        .tag {
             margin: 5px;
             padding: 5px 10px;
             font-size: 1em;
+            border-radius: 20px;
         }
 
         #event-search-or-create {
@@ -62,13 +70,9 @@ Top priority is quick and easy data entry.
         #event-add-tag {
             padding: 10px;
             font-size: 1em;
+            border-radius: 0px;
         }
 
-        #event-tag-suggestions .tag-suggestion {
-            margin: 5px;
-            padding: 5px 10px;
-            font-size: 1em;
-        }
     </style>
 </head>
 
@@ -293,6 +297,7 @@ Top priority is quick and easy data entry.
                 eventEntry_tagsAdded[tag] = true;
                 const eventTagsAdded = document.getElementById("event-tags-added");
                 const tagButton = document.createElement("button");
+                tagButton.classList.add("tag")
                 tagButton.classList.add("tag-added");
                 tagButton.textContent = tag;
                 tagButton.onclick = async () => {
@@ -354,6 +359,7 @@ Top priority is quick and easy data entry.
                 const eventTagSuggestions = document.getElementById("event-tag-suggestions");
                 for (const suggestion of suggestions) {
                     const button = document.createElement("button");
+                    button.classList.add("tag");
                     button.classList.add("tag-suggestion");
                     button.textContent = suggestion;
                     button.onclick = async () => {
