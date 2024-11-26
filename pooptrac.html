@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!--
+A simple web app that tracks bowel movements, food intake, and other health metrics.
+Strictly for personal use.
+Primarily used on Safari on iPhone 13 mini.
+Stores data in indexedDB.
+Will have an export feature to download or copy/paste all data as a flat file.
+Top priority is quick and easy data entry.
+-->
+
+<head>
+    <!-- <link rel="manifest" href="/pooptrac.json"> -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+
+<body>
+    <script> // Data layer
+        // The basic data item is an "event"
+        // Each event can have one or more "tags"
+        // Tags do not store any data, they are just labels
+        // Each event is recorded with a timestamp
+
+        // Common queries:
+        // - A user is typing in the search bar for a previously-used tag (autocomplete)
+        // - A user has added a few tags to an event and the app is suggesting more tags to add
+        // - Get the 10 most recent events
+
+        // Rare queries:
+        // - Export all data
+
+        // Common operations:
+        // - Add a new event
+        // - Add another tag to an existing event
+        // - Remove a tag from an existing event
+
+        // To keep things simple, we will store tags as properties of the event object
+        // Example event object:
+        // {
+        //     id: 1,
+        //     timestamp: 1630000000000,
+        //     poop: true,
+        //     loose: true,
+        //     small: true
+        // }
+
+        // The data layer is a simple wrapper around indexedDB
+
+        async function openDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open("pooptrac", 1);
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    db.createObjectStore("events", { keyPath: "id", autoIncrement: true });
+                    db.createObjectStore("tags", { keyPath: "name" });
+                };
+                request.onsuccess = (event) => {
+                    resolve(event.target.result);
+                };
+                request.onerror = (event) => {
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        async function addEvent(event) {
+            const db = await openDatabase();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(["events", "tags"], "readwrite");
+                transaction.oncomplete = () => {
+                    resolve();
+                };
+                transaction.onerror = (event) => {
+                    reject(event.target.error);
+                };
+                transaction.objectStore("events").add(event);
+                // update tags object store with any new tags
+                for (const tag of Object.keys(currentEvent)) {
+                    if (tag === "id" || tag === "timestamp") {
+                        continue;
+                    }
+                    transaction.objectStore("tags").put({ name: tag });
+                }
+            });
+        }
+
+        async function getAutocompletePossibilitiesForPartiallyEnteredTag(partialTag) {
+            const db = await openDatabase();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction("tags", "readonly");
+                const store = transaction.objectStore("tags");
+                const request = store.openCursor(IDBKeyRange.lowerBound(partialTag), "next");
+                const possibilities = [];
+                request.onsuccess = (event) => {
+                    const cursor = event.target.result;
+                    if (cursor) {
+                        if (cursor.key.startsWith(partialTag)) {
+                            possibilities.push(cursor.key);
+                        }
+                        cursor.continue();
+                    } else {
+                        resolve(possibilities);
+                    }
+                };
+                request.onerror = (event) => {
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        async function getMostRecentEvents(limit) {
+            const db = await openDatabase();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction("events", "readonly");
+                const store = transaction.objectStore("events");
+                const request = store.openCursor(null, "prev");
+                const events = [];
+                let count = 0;
+                request.onsuccess = (event) => {
+                    const cursor = event.target.result;
+                    if (cursor && count < limit) {
+                        events.push(cursor.value);
+                        cursor.continue();
+                        count++;
+                    } else {
+                        resolve(events);
+                    }
+                };
+                request.onerror = (event) => {
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        async function getTagSuggestionsForEvent(currentEvent) {
+            console.log("getTagSuggestionsForEvent", currentEvent);
+            const db = await openDatabase();
+            return new Promise((resolve, reject) => {
+                // Look through previous events that have all the same tags, identify the tags that are not present in the current event, and suggest them in order of frequency
+                const transaction = db.transaction("events", "readonly");
+                const store = transaction.objectStore("events");
+                const request = store.openCursor(null, "prev");
+                const tagCounts = {};
+                let totalEvents = 0;
+                request.onsuccess = (event) => {
+                    const cursor = event.target.result;
+                    if (cursor) {
+                        const otherEvent = cursor.value;
+                        if (otherEvent.id !== currentEvent.id) {
+                            let allTagsMatch = true;
+                            for (const tag of Object.keys(currentEvent)) {
+                                if (tag === "id" || tag === "timestamp") {
+                                    continue;
+                                }
+                                if (!otherEvent[tag]) {
+                                    allTagsMatch = false;
+                                    break;
+                                }
+                            }
+                            if (allTagsMatch) {
+                                for (const tag of Object.keys(otherEvent)) {
+                                    if (tag === "id" || tag === "timestamp") {
+                                        continue;
+                                    }
+                                    if (!currentEvent[tag]) {
+                                        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                                    }
+                                }
+                                totalEvents++;
+                            }
+                            cursor.continue();
+                        }
+                    } else {
+                        const suggestions = Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]);
+                        resolve(suggestions);
+                    }
+                };
+                request.onerror = (event) => {
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        async function exportAllDataAsJson() {
+            const db = await openDatabase();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(["events", "tags"], "readonly");
+                const eventsStore = transaction.objectStore("events");
+                const tagsStore = transaction.objectStore("tags");
+                const eventsRequest = eventsStore.getAll();
+                const tagsRequest = tagsStore.getAll();
+                const data = {};
+                Promise.all([eventsRequest, tagsRequest]).then(([events, tags]) => {
+                    data.events = events;
+                    data.tags = tags;
+                    resolve(JSON.stringify(data, null, 2));
+                }).catch((error) => {
+                    reject(error);
+                });
+            });
+        }
+
+
+
+
+    </script>
+
+    <div id="event" style="display: flex; flex-direction: column;">
+        <div id="event-buttons" style="display: flex; flex-direction: row;">
+            <button id="event-burger" onclick="
+                alert('Not implemented yet');
+                ">☰</button>
+            <button id="event-submit" onclick="
+                const eventToSubmit = { timestamp: Date.now(), ...eventEntry_tagsAdded };
+                addEvent(eventToSubmit);
+                eventEntry_initialize();
+                ">Submit</button>
+        </div>
+        <div id="event-tags-added">
+            <!-- Tags added to the event will be displayed here as buttons (click to remove) -->
+        </div>
+        <script> // eventEntry_tagsAdded functions
+            async function eventEntry_tagsAdded_clear() {
+                eventEntry_tagsAdded = {};
+                const eventTagsAdded = document.getElementById("event-tags-added");
+                while (eventTagsAdded.firstChild) {
+                    eventTagsAdded.removeChild(eventTagsAdded.firstChild);
+                }
+            }
+
+            async function eventEntry_tagsAdded_add(tag) {
+                if (eventEntry_tagsAdded[tag]) {
+                    return;
+                }
+                eventEntry_tagsAdded[tag] = true;
+                const eventTagsAdded = document.getElementById("event-tags-added");
+                const tagButton = document.createElement("button");
+                tagButton.classList.add("tag-added");
+                tagButton.textContent = tag;
+                tagButton.onclick = async () => {
+                    eventEntry_tagsAdded_remove(tag);
+                };
+                eventTagsAdded.appendChild(tagButton);
+                eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
+            }
+
+            async function eventEntry_tagsAdded_remove(tag) {
+                delete eventEntry_tagsAdded[tag];
+                const eventTagsAdded = document.getElementById("event-tags-added");
+                for (const child of eventTagsAdded.children) {
+                    if (child.textContent === tag) {
+                        eventTagsAdded.removeChild(child);
+                        break;
+                    }
+                }
+                if (Object.keys(eventEntry_tagsAdded).length === 0) {
+                    eventEntry_initialize();
+                } else {
+                    eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
+                }
+            }
+
+        </script>
+        <div id="event-search-or-create" style="display: flex; flex-direction: row;">
+            <input id="event-search" type="text" placeholder="Search or create tag" oninput="eventEntry_search_oninput()" />
+            <button id="event-add-tag" onclick="eventEntry_search_addManuallyEnteredTag()">+</button>
+                <script> // eventEntry_search functions
+                    async function eventEntry_search_clear() {
+                        document.getElementById('event-search').value = '';
+                    }
+                    async function eventEntry_search_oninput() {
+                        const partialTag = document.getElementById('event-search').value;
+                        eventEntry_suggestionsDiv_clear();
+                        eventEntry_suggestionsDiv_populate(await getAutocompletePossibilitiesForPartiallyEnteredTag(partialTag));
+                    }
+                    async function eventEntry_search_addManuallyEnteredTag() {
+                        const tag = document.getElementById('event-search').value;
+                        eventEntry_tagsAdded_add(tag);
+                        eventEntry_search_clear();
+                        eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
+                    }
+                </script>
+        </div>
+        <div id="event-tag-suggestions" style="display: flex; flex-direction: row; flex-wrap: wrap;">
+            <!-- Tag suggestions/autocomplete will be added here as buttons -->
+        </div>
+        <script> // eventEntry_suggestionsDiv functions
+            async function eventEntry_suggestionsDiv_clear() {
+                const eventTagSuggestions = document.getElementById("event-tag-suggestions");
+                while (eventTagSuggestions.firstChild) {
+                    eventTagSuggestions.removeChild(eventTagSuggestions.firstChild);
+                }
+            }
+            async function eventEntry_suggestionsDiv_populate(suggestions) {
+                eventEntry_suggestionsDiv_clear();
+                const eventTagSuggestions = document.getElementById("event-tag-suggestions");
+                for (const suggestion of suggestions) {
+                    const button = document.createElement("button");
+                    button.classList.add("tag-suggestion");
+                    button.textContent = suggestion;
+                    button.onclick = async () => {
+                        eventEntry_tagsAdded_add(suggestion);
+                    };
+                    eventTagSuggestions.appendChild(button);
+                }
+            }
+            async function eventEntry_suggestionsDiv_calculateAndPopulateSuggestions() {
+                const suggestions = await getTagSuggestionsForEvent(eventEntry_tagsAdded);
+                eventEntry_suggestionsDiv_populate(suggestions);
+            }
+        </script>
+    </div>
+    <script> // Event entry initialization
+        let eventEntry_tagsAdded;
+        async function eventEntry_initialize() {
+            eventEntry_tagsAdded = {};
+            // Clear the event tags added div
+            eventEntry_tagsAdded_clear();
+            // Clear the search box
+            document.getElementById("event-search").value = "";
+            // Populate the tag suggestions with predefined tags
+            eventEntry_suggestionsDiv_populate(['poop', 'food', 'drink'])
+        }
+        eventEntry_initialize();
+    </script>
+</body>
+
+</html>
