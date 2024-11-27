@@ -176,16 +176,29 @@ app.post('/api/gettagsuggestions', express.json(), (req, res) => {
         res.status(400).json({ error: 'Request body must be an array of tags' });
         return;
     }
-    const tagSet = new Set();
+    const eventsByNumberOfTagsInCommonWithTagsAlreadyChosen = {};
     db.events.forEach(event => {
-        if (tagsAlreadyChosen.every(tag => event.tags.includes(tag))) {
-            event.tags.forEach(tag => {
-                if (!tagsAlreadyChosen.includes(tag)) {
-                    tagSet.add(tag);
-                }
+        const tagsInCommon = event.tags.filter(tag => tagsAlreadyChosen.includes(tag));
+        const countOfTagsInCommon = tagsInCommon.length;
+        if (!eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon]) {
+            eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon] = [];
+        }
+        eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon].push(event);
+    }
+    );
+    const tagSet = new Set();
+    for (let i = tagsAlreadyChosen.length; i >= 0; i--) {
+        if (eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[i]) {
+            eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[i].forEach(event => {
+                event.tags.forEach(tag => {
+                    if (!tagsAlreadyChosen.includes(tag)) {
+                        tagSet.add(tag);
+                    }
+                });
             });
         }
-    });
+    }
+
     res.json(Array.from(tagSet));
 });
 
