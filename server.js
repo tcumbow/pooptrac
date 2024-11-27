@@ -83,7 +83,7 @@ app.post('/api/event', express.json(), (req, res) => {
     newEvent.id = getNextId('event');
     newEvent.created = new Date().toISOString();
     newEvent.modified = newEvent.created;
-    db.events.push(newEvent);
+    db.events.unshift(newEvent);
     saveDb();
     res.json(newEvent);
 });
@@ -137,9 +137,9 @@ app.get('/api/events', (req, res) => {
     // if "recent_count=X" query parameter is provided, return only the X most recent events
     const recentCount = parseInt(req.query.recent_count);
     if (recentCount) {
-        res.json(db.events.slice(-recentCount));
+        res.json(db.events.slice(recentCount));
     } else {
-        res.json(db.events.slice());
+        res.json(db.events);
     }
 });
 
