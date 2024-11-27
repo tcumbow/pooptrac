@@ -89,19 +89,19 @@ app.post('/api/event', express.json(), (req, res) => {
 
 // PUT /api/event/:id
 app.put('/api/event/:id', express.json(), (req, res) => {
-    const id = req.params.id;
-    const eventIndex = db.events.findIndex(event => event.id === id);
+    const idFromUrl = req.params.id;
+    const eventIndex = db.events.findIndex(event => event.id === idFromUrl);
     if (eventIndex === -1) {
         res.status(404).json({ error: 'Event not found' });
         return;
     }
-    const event = db.events[eventIndex];
+    const oldEvent = db.events[eventIndex];
     const newEvent = req.body;
-    if (newEvent.id && newEvent.id !== id) {
+    if (newEvent.id && newEvent.id !== idFromUrl) {
         res.status(400).json({ error: 'Event id cannot be changed' });
         return;
     }
-    if (newEvent.created) {
+    if (newEvent.created && newEvent.created !== oldEvent.created) {
         res.status(400).json({ error: 'Event created date cannot be changed' });
         return;
     }
@@ -109,8 +109,7 @@ app.put('/api/event/:id', express.json(), (req, res) => {
         res.status(400).json({ error: 'Event must have a tags array' });
         return;
     }
-    newEvent.id = id;
-    newEvent.created = event.created;
+    newEvent.created = oldEvent.created;
     newEvent.modified = new Date().toISOString();
     db.events[eventIndex] = newEvent;
     saveDb();

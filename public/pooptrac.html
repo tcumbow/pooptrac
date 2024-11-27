@@ -124,16 +124,16 @@ Top priority is quick and easy data entry.
             return await response.json();
         }
 
-        // async function putEvent(id, event) {
-        //     const response = await fetch(`/api/event/${id}`, {
-        //         method: 'PUT',
-        //         headers: {
-        //             'Content-Type': 'application/json'
-        //         },
-        //         body: JSON.stringify(event)
-        //     });
-        //     return await response.json();
-        // }
+        async function putEvent(id, event) {
+            const response = await fetch(`/api/event/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(event)
+            });
+            return await response.json();
+        }
 
         // async function deleteEvent(id) {
         //     const response = await fetch(`/api/event/${id}`, {
@@ -231,11 +231,22 @@ Top priority is quick and easy data entry.
                 // Initialize the recent div
                 recent_initialize();
                 ">🗓️</button>
-            <button id="event-submit" class="top-button" onclick="
-                const eventToSubmit = { tags: eventEntry_tagsAdded };
-                postEvent(eventToSubmit);
-                eventEntry_initialize();
-                ">Submit</button>
+            <button id="event-submit" class="top-button" onclick="eventEntry_submit()">Submit</button>
+                <script>
+                    async function eventEntry_submit() {
+                        if (eventEntry_mode === 'new') {
+                            const eventToSubmit = { tags: eventEntry_tagsAdded };
+                            await postEvent(eventToSubmit);
+                            eventEntry_initialize();
+                        } else if (eventEntry_mode === 'edit') {
+                            eventEntry_eventToEdit.tags = eventEntry_tagsAdded;
+                            await putEvent(eventEntry_eventToEdit.id, eventEntry_eventToEdit);
+                            eventEntry_initialize();
+                        } else {
+                            alert('Invalid eventEntry_mode');
+                        }
+                    }
+                </script>
         </div>
         <div id="event-tags-added" class="tags-added">
             <!-- Tags added to the event will be displayed here as buttons (click to remove) -->
@@ -276,11 +287,7 @@ Top priority is quick and easy data entry.
                         break;
                     }
                 }
-                if (Object.keys(eventEntry_tagsAdded).length === 0) {
-                    eventEntry_initialize();
-                } else {
-                    eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
-                }
+                eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
             }
 
         </script>
@@ -349,16 +356,32 @@ Top priority is quick and easy data entry.
     </div>
     <script> // Event entry initialization
         let eventEntry_tagsAdded;
+        let eventEntry_mode;
+        let eventEntry_eventToEdit;
         async function eventEntry_initialize() {
-            eventEntry_tagsAdded = [];
-            // Clear the event tags added div
+            eventEntry_mode = 'new';
+            // Clear the event tags added div and array
             eventEntry_tagsAdded_clear();
             // Clear the search box
             document.getElementById("event-search").value = "";
-            // Populate the tag suggestions with predefined tags
+            // Populate the tag suggestions
             eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
         }
         eventEntry_initialize();
+        async function eventEntry_edit(event) {
+            eventEntry_mode = 'edit';
+            eventEntry_eventToEdit = event;
+            // Clear the event tags added div and array
+            eventEntry_tagsAdded_clear();
+            // Populate the event tags added div and array
+            for (const tag of event.tags) {
+                eventEntry_tagsAdded_add(tag);
+            }
+            // Clear the search box
+            document.getElementById("event-search").value = "";
+            // Populate the tag suggestions
+            eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
+        }
     </script>
 
     <div id="recent" class="flex-column hidden">
@@ -382,7 +405,7 @@ Top priority is quick and easy data entry.
     </div>
     <script>
         async function recent_initialize() {
-            const recentEvents = await getEvents(10);
+            const recentEvents = await getEvents(30);
             const recentEventsDiv = document.getElementById("recent-events");
             while (recentEventsDiv.firstChild) {
                 recentEventsDiv.removeChild(recentEventsDiv.firstChild);
@@ -392,6 +415,17 @@ Top priority is quick and easy data entry.
                 eventDiv.classList.add("flex-row");
                 eventDiv.classList.add("margin-bottom");
                 eventDiv.classList.add("recent-event");
+                const editButton = document.createElement("button");
+                editButton.textContent = "✏️";
+                editButton.onclick = async () => {
+                    // Hide the recent div
+                    document.getElementById('recent').classList.add('hidden');
+                    // Show the event entry div
+                    document.getElementById('event').classList.remove('hidden');
+                    // Initialize the event entry div for editing
+                    eventEntry_edit(event);
+                };
+                eventDiv.appendChild(editButton);
                 const eventDate = document.createElement("div");
                 eventDate.textContent = new Date(event.created).toLocaleString();
                 eventDiv.appendChild(eventDate);
