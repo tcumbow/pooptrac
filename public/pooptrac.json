@@ -3,5 +3,12 @@
     "short_name": "PoopTrac",
     "description": "It's a poop tracker and so much more!",
     "start_url": "/pooptrac.html",
-    "display": "standalone"
+    "display": "standalone",
+    "icons": [
+        {
+            "src": "favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        }
+    ]
 }
