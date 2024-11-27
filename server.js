@@ -162,10 +162,76 @@ app.get('/api/tagautocomplete', (req, res) => {
     res.json(Array.from(tagSet));
 });
 
-
+// POST /api/gettagsuggestions
+app.post('/api/gettagsuggestions', express.json(), (req, res) => {
+    // accepts a list of tags, searches for events that contain all of those tags, and returns a list of tags that are used in those events
+    const tagsAlreadyChosen = req.body;
+    if (!Array.isArray(tagsAlreadyChosen)) {
+        res.status(400).json({ error: 'Request body must be an array of tags' });
+        return;
+    }
+    const tagSet = new Set();
+    db.events.forEach(event => {
+        if (tagsAlreadyChosen.every(tag => event.tags.includes(tag))) {
+            event.tags.forEach(tag => tagSet.add(tag));
+        }
+    });
+    res.json(Array.from(tagSet));
+});
 
 app.use(express.static('public'));
 
 server.listen(3031, () => {
     console.log('Server started on http://localhost:3031');
 });
+
+// the following code can be used on the client side to call these APIs
+// async function postEvent(event) {
+//     const response = await fetch('/api/event', {
+//         method: 'POST',
+//         headers: {
+//             'Content-Type': 'application/json'
+//         },
+//         body: JSON.stringify(event)
+//     });
+//     return await response.json();
+// }
+
+// async function putEvent(id, event) {
+//     const response = await fetch(`/api/event/${id}`, {
+//         method: 'PUT',
+//         headers: {
+//             'Content-Type': 'application/json'
+//         },
+//         body: JSON.stringify(event)
+//     });
+//     return await response.json();
+// }
+
+// async function deleteEvent(id) {
+//     const response = await fetch(`/api/event/${id}`, {
+//         method: 'DELETE'
+//     });
+//     return await response.json();
+// }
+
+// async function getEvents(recentCount) { // returns an array of events
+//     const response = await fetch(`/api/events?recent_count=${recentCount}`);
+//     return await response.json();
+// }
+
+// async function getTagAutocomplete(query) { // returns an array of tags
+//     const response = await fetch(`/api/tagautocomplete?q=${query}`);
+//     return await response.json();
+// }
+
+// async function getTagSuggestions(tagsAlreadyChosen) { // returns an array of tags
+//     const response = await fetch('/api/gettagsuggestions', {
+//         method: 'POST',
+//         headers: {
+//             'Content-Type': 'application/json'
+//         },
+//         body: JSON.stringify(tagsAlreadyChosen)
+//     });
+//     return await response.json();
+// }
