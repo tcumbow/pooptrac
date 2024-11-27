@@ -47,7 +47,7 @@ Top priority is quick and easy data entry.
         #event-tags-added {
             margin-bottom: 10px;
         }
-        
+
         .tag {
             margin: 5px;
             padding: 5px 10px;
@@ -76,7 +76,6 @@ Top priority is quick and easy data entry.
             font-size: 1em;
             border-radius: 0px;
         }
-
     </style>
 </head>
 
@@ -165,7 +164,7 @@ Top priority is quick and easy data entry.
                 eventEntry_tagsAdded[tag] = true;
                 const eventTagsAdded = document.getElementById("event-tags-added");
                 const tagButton = document.createElement("button");
-                tagButton.classList.add("tag")
+                tagButton.classList.add("tag");
                 tagButton.classList.add("tag-added");
                 tagButton.textContent = tag;
                 tagButton.onclick = async () => {
@@ -195,25 +194,25 @@ Top priority is quick and easy data entry.
         <div id="event-search-or-create" style="display: flex; flex-direction: row;">
             <input id="event-search" type="text" placeholder="Search or create tag" oninput="eventEntry_search_oninput()" onkeypress="if(event.key === 'Enter') eventEntry_search_addManuallyEnteredTag()" class="event-search-input" />
             <button id="event-add-tag" class="event-add-tag-button" onclick="eventEntry_search_addManuallyEnteredTag()">+</button>
-                <script> // eventEntry_search functions
-                    async function eventEntry_search_clear() {
-                        document.getElementById('event-search').value = '';
+            <script> // eventEntry_search functions
+                async function eventEntry_search_clear() {
+                    document.getElementById('event-search').value = '';
+                }
+                async function eventEntry_search_oninput() {
+                    const partialTag = document.getElementById('event-search').value.toLowerCase();
+                    if (partialTag === '') {
+                        eventEntry_suggestionsDiv_defaultSuggestions();
+                    } else {
+                        eventEntry_suggestionsDiv_populate(await getTagAutocomplete(partialTag));
                     }
-                    async function eventEntry_search_oninput() {
-                        const partialTag = document.getElementById('event-search').value.toLowerCase();
-                        if (partialTag === '') {
-                            eventEntry_suggestionsDiv_defaultSuggestions();
-                        } else {
-                            eventEntry_suggestionsDiv_populate(await getTagAutocomplete(partialTag));
-                        }
-                    }
-                    async function eventEntry_search_addManuallyEnteredTag() {
-                        const tag = document.getElementById('event-search').value.trim().toLowerCase();
-                        eventEntry_tagsAdded_add(tag);
-                        eventEntry_search_clear();
-                        eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
-                    }
-                </script>
+                }
+                async function eventEntry_search_addManuallyEnteredTag() {
+                    const tag = document.getElementById('event-search').value.trim().toLowerCase();
+                    eventEntry_tagsAdded_add(tag);
+                    eventEntry_search_clear();
+                    eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
+                }
+            </script>
         </div>
         <div id="event-tag-suggestions" style="display: flex; flex-direction: row; flex-wrap: wrap;">
             <!-- Tag suggestions/autocomplete will be added here as buttons -->
