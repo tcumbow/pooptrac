@@ -232,7 +232,7 @@ Top priority is quick and easy data entry.
                 recent_initialize();
                 ">🗓️</button>
             <button id="event-submit" class="top-button" onclick="
-                const eventToSubmit = { tags: Object.keys(eventEntry_tagsAdded) };
+                const eventToSubmit = { tags: eventEntry_tagsAdded };
                 postEvent(eventToSubmit);
                 eventEntry_initialize();
                 ">Submit</button>
@@ -242,7 +242,7 @@ Top priority is quick and easy data entry.
         </div>
         <script> // eventEntry_tagsAdded functions
             async function eventEntry_tagsAdded_clear() {
-                eventEntry_tagsAdded = {};
+                eventEntry_tagsAdded = [];
                 const eventTagsAdded = document.getElementById("event-tags-added");
                 while (eventTagsAdded.firstChild) {
                     eventTagsAdded.removeChild(eventTagsAdded.firstChild);
@@ -250,10 +250,10 @@ Top priority is quick and easy data entry.
             }
 
             async function eventEntry_tagsAdded_add(tag) {
-                if (eventEntry_tagsAdded[tag]) {
+                if (eventEntry_tagsAdded.includes(tag)) {
                     return;
                 }
-                eventEntry_tagsAdded[tag] = true;
+                eventEntry_tagsAdded.push(tag);
                 const eventTagsAdded = document.getElementById("event-tags-added");
                 const tagButton = document.createElement("button");
                 tagButton.classList.add("tag");
@@ -268,7 +268,7 @@ Top priority is quick and easy data entry.
             }
 
             async function eventEntry_tagsAdded_remove(tag) {
-                delete eventEntry_tagsAdded[tag];
+                eventEntry_tagsAdded = eventEntry_tagsAdded.filter(t => t !== tag);
                 const eventTagsAdded = document.getElementById("event-tags-added");
                 for (const child of eventTagsAdded.children) {
                     if (child.undecoratedTag === tag) {
@@ -333,7 +333,7 @@ Top priority is quick and easy data entry.
                 }
             }
             async function eventEntry_suggestionsDiv_calculateAndPopulateSuggestions() {
-                const arrayOfTagsAlreadySelected = Object.keys(eventEntry_tagsAdded);
+                const arrayOfTagsAlreadySelected = eventEntry_tagsAdded;
                 const suggestionsFromApi = await getTagSuggestions(arrayOfTagsAlreadySelected);
                 let suggestionsToDisplay;
                 if (arrayOfTagsAlreadySelected.length === 0) {
@@ -350,7 +350,7 @@ Top priority is quick and easy data entry.
     <script> // Event entry initialization
         let eventEntry_tagsAdded;
         async function eventEntry_initialize() {
-            eventEntry_tagsAdded = {};
+            eventEntry_tagsAdded = [];
             // Clear the event tags added div
             eventEntry_tagsAdded_clear();
             // Clear the search box
