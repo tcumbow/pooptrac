@@ -288,6 +288,10 @@ Top priority is quick and easy data entry.
 
     <div id="event" class="flex-column no-scroll">
         <div id="top-buttons" class="flex-row no-grow margin-bottom">
+            <button id="event-edit-cancel" class="top-button no-grow hidden" onclick="
+                // Discard changes and return to new mode
+                eventEntry_initialize_new();
+                ">❌</button>
             <button id="event-goto-recent" class="top-button no-grow" onclick="
                 // Hide the event entry div
                 document.getElementById('event').classList.add('hidden');
@@ -302,11 +306,11 @@ Top priority is quick and easy data entry.
                         if (eventEntry_mode === 'new') {
                             const eventToSubmit = { tags: eventEntry_tagsAdded };
                             await postEvent(eventToSubmit);
-                            eventEntry_initialize();
+                            eventEntry_initialize_new();
                         } else if (eventEntry_mode === 'edit') {
                             eventEntry_eventToEdit.tags = eventEntry_tagsAdded;
                             await putEvent(eventEntry_eventToEdit.id, eventEntry_eventToEdit);
-                            eventEntry_initialize();
+                            eventEntry_initialize_new();
                         } else {
                             alert('Invalid eventEntry_mode');
                         }
@@ -423,8 +427,11 @@ Top priority is quick and easy data entry.
         let eventEntry_tagsAdded;
         let eventEntry_mode;
         let eventEntry_eventToEdit;
-        async function eventEntry_initialize() {
+        async function eventEntry_initialize_new() {
             eventEntry_mode = 'new';
+            eventEntry_eventToEdit = null;
+            // Hide the cancel button
+            document.getElementById('event-edit-cancel').classList.add('hidden');
             // Clear the event tags added div and array
             eventEntry_tagsAdded_clear();
             // Clear the search box
@@ -432,10 +439,12 @@ Top priority is quick and easy data entry.
             // Populate the tag suggestions
             eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
         }
-        eventEntry_initialize();
+        eventEntry_initialize_new();
         async function eventEntry_edit(event) {
             eventEntry_mode = 'edit';
             eventEntry_eventToEdit = event;
+            // Show the cancel button
+            document.getElementById('event-edit-cancel').classList.remove('hidden');
             // Clear the event tags added div and array
             eventEntry_tagsAdded_clear();
             // Populate the event tags added div and array
@@ -457,7 +466,7 @@ Top priority is quick and easy data entry.
                 // Show the event entry div
                 document.getElementById('event').classList.remove('hidden');
                 // Initialize the event entry div
-                eventEntry_initialize();
+                eventEntry_initialize_new();
                 ">📝</button>
             <button id="recent-refresh" class="top-button no-grow" onclick="
                 // Refresh the recent div
