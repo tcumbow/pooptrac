@@ -173,7 +173,11 @@ app.post('/api/gettagsuggestions', express.json(), (req, res) => {
     const tagSet = new Set();
     db.events.forEach(event => {
         if (tagsAlreadyChosen.every(tag => event.tags.includes(tag))) {
-            event.tags.forEach(tag => tagSet.add(tag));
+            event.tags.forEach(tag => {
+                if (!tagsAlreadyChosen.includes(tag)) {
+                    tagSet.add(tag);
+                }
+            });
         }
     });
     res.json(Array.from(tagSet));
