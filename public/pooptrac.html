@@ -205,6 +205,7 @@ Top priority is quick and easy data entry.
             water: "💧",
             juice: "🧃",
             coffee: "☕",
+            caffeine: "☕",
             tea: "🍵",
             chinese: "🍜",
             mexican: "🌮",
@@ -214,6 +215,7 @@ Top priority is quick and easy data entry.
             rice: "🍚",
             noodle: "🍜",
             bean: "🥫",
+            beans: "🥫",
             beef: "🥩",
             chicken: "🍗",
             pork: "🍖",
@@ -243,11 +245,30 @@ Top priority is quick and easy data entry.
             beer: "🍺",
             wine: "🍷",
             liquor: "🥃",
-            sandwich: "🥪"
+            sandwich: "🥪",
+            olive: "🐈",
+            dairy: "🥛",
+            gluten: "🌾",
+            soy: "🌱",
+            nut: "🥜",
+            egg: "🥚",
+            shellfish: "🦐",
+            sausage: "🌭",
+            bacon: "🥓",
+            hotdog: "🌭"
         };
 
         function decorateText(text) {
-            return emojiMap[text] ? emojiMap[text] + text : text;
+            if (emojiMap[text]) {
+                return emojiMap[text] + text;
+            }
+            if (text.startsWith("washlet")) {
+                return "💦" + text;
+            }
+            if (text.includes("meat")) {
+                return "🥩" + text;
+            }
+            return text;
         }
 
         function getFriendlyDate(dateObj) {
