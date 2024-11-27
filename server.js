@@ -58,7 +58,6 @@ function saveDb(retries = 0) {
             });
         }
     });
-    sendRefreshSignal();
 }
 
 function getNextId(prefix) {
