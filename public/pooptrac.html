@@ -77,6 +77,13 @@ Top priority is quick and easy data entry.
             background-color: darkblue;
         }
 
+        .tags-added {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            min-height: 43px;
+        }
+
         .event-search-input {
             flex: 1;
             padding: 10px;
@@ -295,7 +302,7 @@ Top priority is quick and easy data entry.
                 eventEntry_initialize();
                 ">Submit</button>
         </div>
-        <div id="event-tags-added">
+        <div id="event-tags-added" class="tags-added">
             <!-- Tags added to the event will be displayed here as buttons (click to remove) -->
         </div>
         <script> // eventEntry_tagsAdded functions
