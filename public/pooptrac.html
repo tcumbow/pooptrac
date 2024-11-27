@@ -151,6 +151,7 @@ Top priority is quick and easy data entry.
     </script>
 
     <script> // Misc
+        const DEFAULT_TAG_SUGGESTIONS = ['poop', 'food', 'drink'];
         function decorateText(text) {
             if (text === "poop") {
                 return "💩poop";
@@ -351,7 +352,7 @@ Top priority is quick and easy data entry.
                 async function eventEntry_search_oninput() {
                     const partialTag = document.getElementById('event-search').value.toLowerCase();
                     if (partialTag === '') {
-                        eventEntry_suggestionsDiv_defaultSuggestions();
+                        eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
                     } else {
                         eventEntry_suggestionsDiv_populate(await getTagAutocomplete(partialTag));
                     }
@@ -391,11 +392,16 @@ Top priority is quick and easy data entry.
             }
             async function eventEntry_suggestionsDiv_calculateAndPopulateSuggestions() {
                 const arrayOfTagsAlreadySelected = Object.keys(eventEntry_tagsAdded);
-                const suggestions = await getTagSuggestions(arrayOfTagsAlreadySelected);
-                eventEntry_suggestionsDiv_populate(suggestions);
-            }
-            async function eventEntry_suggestionsDiv_defaultSuggestions() {
-                eventEntry_suggestionsDiv_populate(['poop', 'food', 'drink']);
+                const suggestionsFromApi = await getTagSuggestions(arrayOfTagsAlreadySelected);
+                let suggestionsToDisplay;
+                if (arrayOfTagsAlreadySelected.length === 0) {
+                    // If no tags have been selected, display the default suggestions and append the suggestions from the API
+                    suggestionsToDisplay = DEFAULT_TAG_SUGGESTIONS.concat(suggestionsFromApi.filter(suggestion => !DEFAULT_TAG_SUGGESTIONS.includes(suggestion)));
+
+                } else {
+                    suggestionsToDisplay = suggestionsFromApi;
+                }
+                eventEntry_suggestionsDiv_populate(suggestionsToDisplay);
             }
         </script>
     </div>
@@ -408,7 +414,7 @@ Top priority is quick and easy data entry.
             // Clear the search box
             document.getElementById("event-search").value = "";
             // Populate the tag suggestions with predefined tags
-            eventEntry_suggestionsDiv_defaultSuggestions();
+            eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
         }
         eventEntry_initialize();
     </script>
