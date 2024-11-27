@@ -61,6 +61,14 @@ Top priority is quick and easy data entry.
             flex-grow: 0 !important;
         }
 
+        .no-scroll {
+            overflow: hidden;
+        }
+
+        .scroll {
+            overflow: auto;
+        }
+
         .top-button {
             /* flex: 1; */
             margin: 0 5px;
@@ -102,6 +110,13 @@ Top priority is quick and easy data entry.
             padding: 10px;
             font-size: 1em;
             border-radius: 0px;
+        }
+
+        .event-tag-suggestions {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            overflow: auto;
         }
 
         .recent-event {
@@ -221,7 +236,7 @@ Top priority is quick and easy data entry.
         }
     </script>
 
-    <div id="event" class="flex-column">
+    <div id="event" class="flex-column no-scroll">
         <div id="top-buttons" class="flex-row no-grow margin-bottom">
             <button id="event-goto-recent" class="top-button no-grow" onclick="
                 // Hide the event entry div
@@ -314,7 +329,7 @@ Top priority is quick and easy data entry.
                 }
             </script>
         </div>
-        <div id="event-tag-suggestions" style="display: flex; flex-direction: row; flex-wrap: wrap;">
+        <div id="event-tag-suggestions" class="event-tag-suggestions">
             <!-- Tag suggestions/autocomplete will be added here as buttons -->
         </div>
         <script> // eventEntry_suggestionsDiv functions
@@ -384,7 +399,7 @@ Top priority is quick and easy data entry.
         }
     </script>
 
-    <div id="recent" class="flex-column hidden">
+    <div id="recent" class="flex-column hidden no-scroll">
         <div id="recent-top-buttons" class="flex-row no-grow margin-bottom">
             <button id="recent-goto-event" class="top-button no-grow" onclick="
                 // Hide the recent div
@@ -399,7 +414,7 @@ Top priority is quick and easy data entry.
                 recent_initialize();
                 ">🔄</button>
         </div>
-        <div id="recent-events" class="flex-column no-grow">
+        <div id="recent-events" class="flex-column no-grow scroll">
             <!-- Recent events will be displayed here -->
         </div>
     </div>
