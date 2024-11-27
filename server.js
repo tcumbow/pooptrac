@@ -146,21 +146,20 @@ app.get('/api/events', (req, res) => {
 // GET /api/tagautocomplete
 app.get('/api/tagautocomplete', (req, res) => {
     // accepts a query parameter "q" and returns a list of tags that start with that query
-    // the list should be sorted alphabetically
     const query = req.query.q;
     if (!query) {
         res.status(400).json({ error: 'Query parameter "q" is required' });
         return;
     }
-    const tags = db.events.reduce((acc, event) => {
+    const tagSet = new Set();
+    db.events.forEach(event => {
         event.tags.forEach(tag => {
-            if (tag.startsWith(query) && !acc.includes(tag)) {
-                acc.push(tag);
+            if (tag.startsWith(query)) {
+                tagSet.add(tag);
             }
         });
-        return acc;
-    }, []);
-    res.json(tags.sort());
+    });
+    res.json(Array.from(tagSet));
 });
 
 
