@@ -181,6 +181,38 @@ app.post('/api/gettagsuggestions', express.json(), (req, res) => {
     res.json(Array.from(tagSet));
 });
 
+function extrapolateTags(tagsList) {
+    // to be implemented later, for now, just returns the same list
+    return tagsList;
+}
+
+function convertTagsArrayToObject(tagsList) {
+    const tags = {};
+    tagsList.forEach(tag => tags[tag] = 1);
+    return tags;
+}
+
+// GET /api/reporting/events
+app.get('/api/reporting/events', (req, res) => {
+    // returns an object optimized for reporting purposes
+    const report = {};
+    // create a list of all events with extrapolated tags
+    report.events = db.events.map(event => {
+        const extrapolatedTags = extrapolateTags(event.tags);
+        const objectifiedTags = convertTagsArrayToObject(extrapolatedTags);
+        return { ...event, tags: objectifiedTags };
+    });
+    // create a list of all tags used in events
+    const tags = new Set();
+    db.events.forEach(event => extrapolateTags(event.tags).forEach(tag => tags.add(tag)));
+    report.tags = Array.from(tags);
+    // include misc stats
+    report.totalEvents = report.events.length;
+    report.totalTags = report.tags.size;
+    report.dateGenerated = new Date().toISOString();
+    res.json(report);
+});
+
 app.use(express.static('public'));
 
 server.listen(3031, () => {
