@@ -157,6 +157,14 @@ app.get('/api/tagautocomplete', (req, res) => {
             }
         });
     });
+    // also get tags that contain the query
+    db.events.forEach(event => {
+        event.tags.forEach(tag => {
+            if (tag.includes(query)) {
+                tagSet.add(tag);
+            }
+        });
+    });
     res.json(Array.from(tagSet));
 });
 
