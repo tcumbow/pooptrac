@@ -136,7 +136,7 @@ app.get('/api/events', (req, res) => {
     // if "recent_count=X" query parameter is provided, return only the X most recent events
     const recentCount = parseInt(req.query.recent_count);
     if (recentCount) {
-        res.json(db.events.slice(recentCount));
+        res.json(db.events.slice(0, recentCount));
     } else {
         res.json(db.events);
     }

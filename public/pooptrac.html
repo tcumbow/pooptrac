@@ -33,6 +33,10 @@ Top priority is quick and easy data entry.
             cursor: pointer;
         }
 
+        .hidden {
+            display: none !important;
+        }
+
         .flex-row {
             display: flex;
             flex-direction: row;
@@ -99,6 +103,10 @@ Top priority is quick and easy data entry.
             font-size: 1em;
             border-radius: 0px;
         }
+
+        .recent-event {
+            align-items: center;
+        }
     </style>
 </head>
 
@@ -134,10 +142,15 @@ Top priority is quick and easy data entry.
         //     return await response.json();
         // }
 
-        // async function getEvents(recentCount) { // returns an array of events
-        //     const response = await fetch(`/api/events?recent_count=${recentCount}`);
-        //     return await response.json();
-        // }
+        async function getEvents(recentCount) { // returns an array of events
+            const response = await fetch(`/api/events?recent_count=${recentCount}`);
+            return await response.json();
+        }
+
+        // Note: The server adds three properties to each event:
+        // - id: a unique identifier string
+        // - created: basically new Date().toISOString()
+        // - updated: basically new Date().toISOString() (but updated when the event is updated)
 
         async function getTagAutocomplete(query) { // returns an array of tags
             const response = await fetch(`/api/tagautocomplete?q=${query}`);
@@ -210,9 +223,14 @@ Top priority is quick and easy data entry.
 
     <div id="event" class="flex-column">
         <div id="top-buttons" class="flex-row no-grow margin-bottom">
-            <button id="event-burger" class="top-button no-grow" onclick="
-                alert('Not implemented yet');
-                ">☰</button>
+            <button id="event-goto-recent" class="top-button no-grow" onclick="
+                // Hide the event entry div
+                document.getElementById('event').classList.add('hidden');
+                // Show the recent div
+                document.getElementById('recent').classList.remove('hidden');
+                // Initialize the recent div
+                recent_initialize();
+                ">🗓️</button>
             <button id="event-submit" class="top-button" onclick="
                 const eventToSubmit = { tags: Object.keys(eventEntry_tagsAdded) };
                 postEvent(eventToSubmit);
@@ -341,6 +359,52 @@ Top priority is quick and easy data entry.
             eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
         }
         eventEntry_initialize();
+    </script>
+
+    <div id="recent" class="flex-column hidden">
+        <div id="recent-top-buttons" class="flex-row no-grow margin-bottom">
+            <button id="recent-goto-event" class="top-button no-grow" onclick="
+                // Hide the recent div
+                document.getElementById('recent').classList.add('hidden');
+                // Show the event entry div
+                document.getElementById('event').classList.remove('hidden');
+                // Initialize the event entry div
+                eventEntry_initialize();
+                ">📝</button>
+            <button id="recent-refresh" class="top-button no-grow" onclick="
+                // Refresh the recent div
+                recent_initialize();
+                ">🔄</button>
+        </div>
+        <div id="recent-events" class="flex-column no-grow">
+            <!-- Recent events will be displayed here -->
+        </div>
+    </div>
+    <script>
+        async function recent_initialize() {
+            const recentEvents = await getEvents(10);
+            const recentEventsDiv = document.getElementById("recent-events");
+            while (recentEventsDiv.firstChild) {
+                recentEventsDiv.removeChild(recentEventsDiv.firstChild);
+            }
+            for (const event of recentEvents) {
+                const eventDiv = document.createElement("div");
+                eventDiv.classList.add("flex-row");
+                eventDiv.classList.add("margin-bottom");
+                eventDiv.classList.add("recent-event");
+                const eventDate = document.createElement("div");
+                eventDate.textContent = new Date(event.created).toLocaleString();
+                eventDiv.appendChild(eventDate);
+                for (const tag of event.tags) {
+                    const tagButton = document.createElement("button");
+                    tagButton.classList.add("tag");
+                    tagButton.textContent = decorateText(tag);
+                    tagButton.style.cursor = "default";
+                    eventDiv.appendChild(tagButton);
+                }
+                recentEventsDiv.appendChild(eventDiv);
+            }
+        }
     </script>
 </body>
 
