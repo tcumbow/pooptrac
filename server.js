@@ -202,6 +202,22 @@ app.post('/api/gettagsuggestions', express.json(), (req, res) => {
     res.json(Array.from(tagSet));
 });
 
+// GET /api/mostusedtags
+app.get('/api/mostusedfirsttags', (req, res) => {
+    // returns a list of tags that have been used as the first tag in events, sorted by frequency
+    const tagCount = {};
+    db.events.forEach(event => {
+        const firstTag = event.tags[0];
+        if (!tagCount[firstTag]) {
+            tagCount[firstTag] = 0;
+        }
+        tagCount[firstTag]++;
+    });
+    const tags = Object.keys(tagCount);
+    tags.sort((a, b) => tagCount[b] - tagCount[a]);
+    res.json(tags);
+});
+
 function extrapolateTags(tagsList) {
     // to be implemented later, for now, just returns the same list
     return tagsList;

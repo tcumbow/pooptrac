@@ -189,6 +189,11 @@ Top priority is quick and easy data entry.
             return await response.json();
         }
 
+        async function getCommonFirstTags() { // returns an array of tags
+            const response = await fetch('/api/mostusedfirsttags');
+            return await response.json();
+        }
+
     </script>
 
     <script> // Misc
@@ -435,9 +440,8 @@ Top priority is quick and easy data entry.
                 const suggestionsFromApi = await getTagSuggestions(arrayOfTagsAlreadySelected);
                 let suggestionsToDisplay;
                 if (arrayOfTagsAlreadySelected.length === 0) {
-                    // If no tags have been selected, display the default suggestions and append the suggestions from the API
-                    suggestionsToDisplay = DEFAULT_TAG_SUGGESTIONS.concat(suggestionsFromApi.filter(suggestion => !DEFAULT_TAG_SUGGESTIONS.includes(suggestion)));
-
+                    const mostUsedFirstTags = await getCommonFirstTags();
+                    suggestionsToDisplay = mostUsedFirstTags.concat(suggestionsFromApi.filter(tag => !mostUsedFirstTags.includes(tag)));
                 } else {
                     suggestionsToDisplay = suggestionsFromApi;
                 }
