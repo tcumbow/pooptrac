@@ -84,8 +84,12 @@ Top priority is quick and easy data entry.
             border-radius: 20px;
         }
 
-        .tag-added {
+        .tag-suggestion-highpriority {
             background-color: darkblue;
+        }
+
+        .tag-added {
+            background-color: darkgreen;
         }
 
         .tags-added {
@@ -420,9 +424,23 @@ Top priority is quick and easy data entry.
                     eventTagSuggestions.removeChild(eventTagSuggestions.firstChild);
                 }
             }
-            async function eventEntry_suggestionsDiv_populate(suggestions) {
+            async function eventEntry_suggestionsDiv_populate(suggestions, highPrioritySuggestions) {
                 eventEntry_suggestionsDiv_clear();
                 const eventTagSuggestions = document.getElementById("event-tag-suggestions");
+                if (highPrioritySuggestions) {
+                    for (const suggestion of highPrioritySuggestions) {
+                        const button = document.createElement("button");
+                        button.classList.add("tag");
+                        button.classList.add("tag-suggestion");
+                        button.classList.add("tag-suggestion-highpriority");
+                        button.undecoratedTag = suggestion;
+                        button.textContent = decorateText(suggestion);
+                        button.onclick = async () => {
+                            eventEntry_tagsAdded_add(suggestion);
+                        };
+                        eventTagSuggestions.appendChild(button);
+                    }
+                }
                 for (const suggestion of suggestions) {
                     const button = document.createElement("button");
                     button.classList.add("tag");
@@ -438,14 +456,13 @@ Top priority is quick and easy data entry.
             async function eventEntry_suggestionsDiv_calculateAndPopulateSuggestions() {
                 const arrayOfTagsAlreadySelected = eventEntry_tagsAdded;
                 const suggestionsFromApi = await getTagSuggestions(arrayOfTagsAlreadySelected);
-                let suggestionsToDisplay;
                 if (arrayOfTagsAlreadySelected.length === 0) {
                     const mostUsedFirstTags = await getCommonFirstTags();
-                    suggestionsToDisplay = mostUsedFirstTags.concat(suggestionsFromApi.filter(tag => !mostUsedFirstTags.includes(tag)));
+                    const otherSuggestionsToDisplay = suggestionsFromApi.filter(tag => !mostUsedFirstTags.includes(tag));
+                    eventEntry_suggestionsDiv_populate(otherSuggestionsToDisplay, mostUsedFirstTags);
                 } else {
-                    suggestionsToDisplay = suggestionsFromApi;
+                    eventEntry_suggestionsDiv_populate(suggestionsFromApi);
                 }
-                eventEntry_suggestionsDiv_populate(suggestionsToDisplay);
             }
         </script>
     </div>
