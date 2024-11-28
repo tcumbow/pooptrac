@@ -354,6 +354,8 @@ Top priority is quick and easy data entry.
                 if (eventEntry_tagsAdded.includes(tag)) {
                     return;
                 }
+                // clear the search box
+                eventEntry_search_clear();
                 eventEntry_tagsAdded.push(tag);
                 const eventTagsAdded = document.getElementById("event-tags-added");
                 const tagButton = document.createElement("button");
@@ -399,7 +401,6 @@ Top priority is quick and easy data entry.
                 async function eventEntry_search_addManuallyEnteredTag() {
                     const tag = document.getElementById('event-search').value.trim().toLowerCase();
                     eventEntry_tagsAdded_add(tag);
-                    eventEntry_search_clear();
                     eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
                 }
             </script>
