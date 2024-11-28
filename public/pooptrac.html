@@ -14,6 +14,10 @@ Top priority is quick and easy data entry.
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
+        html {
+            touch-action: manipulation;
+        }
+        
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -97,6 +101,7 @@ Top priority is quick and easy data entry.
             flex-direction: row;
             flex-wrap: wrap;
             min-height: 43px;
+            flex-shrink: 0;
         }
 
         .event-search-input {
