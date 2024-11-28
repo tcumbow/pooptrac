@@ -176,76 +176,45 @@ app.post('/api/gettagsuggestions', express.json(), (req, res) => {
         res.status(400).json({ error: 'Request body must be an array of tags' });
         return;
     }
-    const eventsByNumberOfTagsInCommonWithTagsAlreadyChosen = {};
-    db.events.forEach(event => {
-        const tagsInCommon = event.tags.filter(tag => tagsAlreadyChosen.includes(tag));
-        const countOfTagsInCommon = tagsInCommon.length;
-        if (!eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon]) {
-            eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon] = [];
+    if (tagsAlreadyChosen.length === 0) {
+        const mostUsedFirstTags = getMostUsedFirstTags();
+        const otherTags = getAllTags().filter(tag => !mostUsedFirstTags.includes(tag));
+        res.json({ best: mostUsedFirstTags, other: otherTags });
+    } else {
+        const eventsByNumberOfTagsInCommonWithTagsAlreadyChosen = {};
+        db.events.forEach(event => {
+            const tagsInCommon = event.tags.filter(tag => tagsAlreadyChosen.includes(tag));
+            const countOfTagsInCommon = tagsInCommon.length;
+            if (!eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon]) {
+                eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon] = [];
+            }
+            eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon].push(event);
         }
-        eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon].push(event);
-    }
-    );
-    const tagSet = new Set();
-    for (let i = tagsAlreadyChosen.length; i >= 0; i--) {
-        if (eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[i]) {
-            eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[i].forEach(event => {
-                event.tags.forEach(tag => {
-                    if (!tagsAlreadyChosen.includes(tag)) {
-                        tagSet.add(tag);
-                    }
-                });
-            });
-        }
-    }
-
-    res.json(Array.from(tagSet));
-});
-
-// POST /api/gettagsuggestions_v2
-app.post('/api/gettagsuggestions_v2', express.json(), (req, res) => {
-    // accepts a list of tags, searches for events that contain all of those tags, and returns a list of tags that are used in those events
-    const tagsAlreadyChosen = req.body;
-    if (!Array.isArray(tagsAlreadyChosen)) {
-        res.status(400).json({ error: 'Request body must be an array of tags' });
-        return;
-    }
-    const eventsByNumberOfTagsInCommonWithTagsAlreadyChosen = {};
-    db.events.forEach(event => {
-        const tagsInCommon = event.tags.filter(tag => tagsAlreadyChosen.includes(tag));
-        const countOfTagsInCommon = tagsInCommon.length;
-        if (!eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon]) {
-            eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon] = [];
-        }
-        eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon].push(event);
-    }
-    );
-    const tagSetBest = new Set();
-    const tagSet = new Set();
-    for (let i = tagsAlreadyChosen.length; i >= 0; i--) {
-        if (eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[i]) {
-            eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[i].forEach(event => {
-                event.tags.forEach(tag => {
-                    if (!tagsAlreadyChosen.includes(tag)) {
-                        if (i === tagsAlreadyChosen.length) {
-                            tagSetBest.add(tag);
-                        } else {
-                            if (!tagSetBest.has(tag)) {
-                                tagSet.add(tag);
+        );
+        const tagSetBest = new Set();
+        const tagSet = new Set();
+        for (let i = tagsAlreadyChosen.length; i >= 0; i--) {
+            if (eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[i]) {
+                eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[i].forEach(event => {
+                    event.tags.forEach(tag => {
+                        if (!tagsAlreadyChosen.includes(tag)) {
+                            if (i === tagsAlreadyChosen.length) {
+                                tagSetBest.add(tag);
+                            } else {
+                                if (!tagSetBest.has(tag)) {
+                                    tagSet.add(tag);
+                                }
                             }
                         }
-                    }
+                    });
                 });
-            });
+            }
         }
+        res.json({ best: Array.from(tagSetBest), other: Array.from(tagSet) });
     }
-
-    res.json({ best: Array.from(tagSetBest), other: Array.from(tagSet) });
 });
 
-// GET /api/mostusedtags
-app.get('/api/mostusedfirsttags', (req, res) => {
-    // returns a list of tags that have been used as the first tag in events, sorted by frequency
+function getMostUsedFirstTags() {
     const tagCount = {};
     db.events.forEach(event => {
         const firstTag = event.tags[0];
@@ -256,8 +225,16 @@ app.get('/api/mostusedfirsttags', (req, res) => {
     });
     const tags = Object.keys(tagCount);
     tags.sort((a, b) => tagCount[b] - tagCount[a]);
-    res.json(tags);
-});
+    return tags;
+}
+
+function getAllTags() {
+    const tagSet = new Set();
+    db.events.forEach(event => {
+        event.tags.forEach(tag => tagSet.add(tag));
+    });
+    return Array.from(tagSet);
+}
 
 function extrapolateTags(tagsList) {
     // to be implemented later, for now, just returns the same list

@@ -182,7 +182,7 @@ Top priority is quick and easy data entry.
             return await response.json();
         }
 
-        async function getTagSuggestions(tagsAlreadyChosen) { // returns an array of tags
+        async function getTagSuggestions(tagsAlreadyChosen) { // returns an object with two arrays: best and other
             const response = await fetch('/api/gettagsuggestions', {
                 method: 'POST',
                 headers: {
@@ -190,22 +190,6 @@ Top priority is quick and easy data entry.
                 },
                 body: JSON.stringify(tagsAlreadyChosen)
             });
-            return await response.json();
-        }
-
-        async function getTagSuggestionsV2(tagsAlreadyChosen) { // returns an object with two arrays: best and other
-            const response = await fetch('/api/gettagsuggestions_v2', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(tagsAlreadyChosen)
-            });
-            return await response.json();
-        }
-
-        async function getCommonFirstTags() { // returns an array of tags
-            const response = await fetch('/api/mostusedfirsttags');
             return await response.json();
         }
 
@@ -466,15 +450,8 @@ Top priority is quick and easy data entry.
             }
             async function eventEntry_suggestionsDiv_calculateAndPopulateSuggestions() {
                 const arrayOfTagsAlreadySelected = eventEntry_tagsAdded;
-                if (arrayOfTagsAlreadySelected.length === 0) {
-                    const suggestionsFromApi = await getTagSuggestions(arrayOfTagsAlreadySelected);
-                    const mostUsedFirstTags = await getCommonFirstTags();
-                    const otherSuggestionsToDisplay = suggestionsFromApi.filter(tag => !mostUsedFirstTags.includes(tag));
-                    eventEntry_suggestionsDiv_populate(otherSuggestionsToDisplay, mostUsedFirstTags);
-                } else {
-                    const suggestionsFromApiV2 = await getTagSuggestionsV2(arrayOfTagsAlreadySelected);
-                    eventEntry_suggestionsDiv_populate(suggestionsFromApiV2.other, suggestionsFromApiV2.best);
-                }
+                const suggestionsFromApiV2 = await getTagSuggestions(arrayOfTagsAlreadySelected);
+                eventEntry_suggestionsDiv_populate(suggestionsFromApiV2.other, suggestionsFromApiV2.best);
             }
         </script>
     </div>
