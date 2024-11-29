@@ -151,6 +151,12 @@ Top priority is quick and easy data entry.
                 },
                 body: JSON.stringify(event)
             });
+            // check for non 200 status codes and display an alert
+            if (!response.ok) {
+                alert('Failed to save event');
+                throw new Error('Failed to save event');
+                return;
+            }
             return await response.json();
         }
 
@@ -330,6 +336,33 @@ Top priority is quick and easy data entry.
                 // Initialize the recent div
                 recent_initialize();
                 ">🗓️</button>
+            <button id="event-save" class="top-button no-grow hidden" onclick="
+                // Save the event
+                eventEntry_save();
+                ">💾</button>
+                <script>
+                    async function eventEntry_save() {
+                        if (eventEntry_mode === 'new') {
+                            const eventToSubmit = { tags: eventEntry_tagsAdded };
+                            const eventCreated = await postEvent(eventToSubmit);
+                            eventEntry_edit(eventCreated);
+                        } else if (eventEntry_mode === 'edit') {
+                            eventEntry_eventToEdit.tags = eventEntry_tagsAdded;
+                            await putEvent(eventEntry_eventToEdit.id, eventEntry_eventToEdit);
+                            eventEntry_tagsCurrentlySavedToServerTracker.set(eventEntry_tagsAdded);
+                            eventEntry_updateSaveButtonVisibility();
+                        } else {
+                            alert('Invalid eventEntry_mode');
+                        }
+                    }
+                    async function eventEntry_updateSaveButtonVisibility() {
+                        if (eventEntry_tagsCurrentlySavedToServerTracker.isDifferent()) {
+                            document.getElementById('event-save').classList.remove('hidden');
+                        } else {
+                            document.getElementById('event-save').classList.add('hidden');
+                        }
+                    }
+                </script>
             <button id="event-submit" class="top-button" onclick="eventEntry_submit()">Submit</button>
                 <script>
                     async function eventEntry_submit() {
@@ -376,6 +409,7 @@ Top priority is quick and easy data entry.
                     eventEntry_tagsAdded_remove(tag);
                 };
                 eventTagsAdded.appendChild(tagButton);
+                eventEntry_updateSaveButtonVisibility();
                 eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
             }
 
@@ -388,6 +422,7 @@ Top priority is quick and easy data entry.
                         break;
                     }
                 }
+                eventEntry_updateSaveButtonVisibility();
                 eventEntry_suggestionsDiv_calculateAndPopulateSuggestions();
             }
 
@@ -462,6 +497,26 @@ Top priority is quick and easy data entry.
     </div>
     <script> // Event entry initialization
         let eventEntry_tagsAdded;
+        const eventEntry_tagsCurrentlySavedToServerTracker = {
+            _tags: [],
+            clear: function() {
+                this._tags = [];
+            },
+            set: function(tags) {
+                this._tags = [...tags];
+            },
+            isDifferent: function() {
+                if (this._tags.length !== eventEntry_tagsAdded.length) {
+                    return true;
+                }
+                for (let i = 0; i < this._tags.length; i++) {
+                    if (this._tags[i] !== eventEntry_tagsAdded[i]) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
         let eventEntry_mode;
         let eventEntry_eventToEdit;
         async function eventEntry_initialize_new() {
@@ -471,6 +526,10 @@ Top priority is quick and easy data entry.
             document.getElementById('event-edit-cancel').classList.add('hidden');
             // Clear the event tags added div and array
             eventEntry_tagsAdded_clear();
+            // Clear eventEntry_tagsCurrentlySavedToServer
+            eventEntry_tagsCurrentlySavedToServerTracker.clear();
+            // Update the save button visibility
+            eventEntry_updateSaveButtonVisibility();
             // Clear the search box
             document.getElementById("event-search").value = "";
             // Populate the tag suggestions
@@ -488,6 +547,10 @@ Top priority is quick and easy data entry.
             for (const tag of event.tags) {
                 eventEntry_tagsAdded_add(tag);
             }
+            // Set eventEntry_tagsCurrentlySavedToServerTracker
+            eventEntry_tagsCurrentlySavedToServerTracker.set(event.tags);
+            // Update the save button visibility
+            eventEntry_updateSaveButtonVisibility();
             // Clear the search box
             document.getElementById("event-search").value = "";
             // Populate the tag suggestions
