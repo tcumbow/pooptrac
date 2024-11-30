@@ -17,7 +17,7 @@ Top priority is quick and easy data entry.
         html {
             touch-action: manipulation;
         }
-        
+
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -344,42 +344,42 @@ Top priority is quick and easy data entry.
                 // Save the event
                 eventEntry_save();
                 ">💾 Save</button>
-                <script>
-                    async function eventEntry_save() {
-                        if (eventEntry_mode === 'new') {
-                            const eventToSubmit = { tags: eventEntry_tagsAdded };
-                            const eventCreated = await postEvent(eventToSubmit);
-                            eventEntry_edit(eventCreated);
-                        } else if (eventEntry_mode === 'edit') {
-                            eventEntry_eventToEdit.tags = eventEntry_tagsAdded;
-                            await putEvent(eventEntry_eventToEdit.id, eventEntry_eventToEdit);
-                            eventEntry_tagsCurrentlySavedToServerTracker.set(eventEntry_tagsAdded);
-                            eventEntry_updateButtons();
-                        } else {
-                            alert('Invalid eventEntry_mode');
-                        }
+            <script>
+                async function eventEntry_save() {
+                    if (eventEntry_mode === 'new') {
+                        const eventToSubmit = { tags: eventEntry_tagsAdded };
+                        const eventCreated = await postEvent(eventToSubmit);
+                        eventEntry_edit(eventCreated);
+                    } else if (eventEntry_mode === 'edit') {
+                        eventEntry_eventToEdit.tags = eventEntry_tagsAdded;
+                        await putEvent(eventEntry_eventToEdit.id, eventEntry_eventToEdit);
+                        eventEntry_tagsCurrentlySavedToServerTracker.set(eventEntry_tagsAdded);
+                        eventEntry_updateButtons();
+                    } else {
+                        alert('Invalid eventEntry_mode');
                     }
-                </script>
+                }
+            </script>
             <button id="event-edit-cancel" class="top-button" onclick="
                 // Discard changes and return to new mode
                 eventEntry_initialize_new();
                 ">❌ Discard</button>
             <button id="event-submit" class="top-button" onclick="eventEntry_submit()">💾❌ Save+Close</button>
-                <script>
-                    async function eventEntry_submit() {
-                        if (eventEntry_mode === 'new') {
-                            const eventToSubmit = { tags: eventEntry_tagsAdded };
-                            await postEvent(eventToSubmit);
-                            eventEntry_initialize_new();
-                        } else if (eventEntry_mode === 'edit') {
-                            eventEntry_eventToEdit.tags = eventEntry_tagsAdded;
-                            await putEvent(eventEntry_eventToEdit.id, eventEntry_eventToEdit);
-                            eventEntry_initialize_new();
-                        } else {
-                            alert('Invalid eventEntry_mode');
-                        }
+            <script>
+                async function eventEntry_submit() {
+                    if (eventEntry_mode === 'new') {
+                        const eventToSubmit = { tags: eventEntry_tagsAdded };
+                        await postEvent(eventToSubmit);
+                        eventEntry_initialize_new();
+                    } else if (eventEntry_mode === 'edit') {
+                        eventEntry_eventToEdit.tags = eventEntry_tagsAdded;
+                        await putEvent(eventEntry_eventToEdit.id, eventEntry_eventToEdit);
+                        eventEntry_initialize_new();
+                    } else {
+                        alert('Invalid eventEntry_mode');
                     }
-                </script>
+                }
+            </script>
         </div>
         <div id="event-tags-added" class="tags-added">
             <!-- Tags added to the event will be displayed here as buttons (click to remove) -->
@@ -499,7 +499,7 @@ Top priority is quick and easy data entry.
     </div>
     <script> // Event entry initialization
         async function eventEntry_updateButtons() {
-            const thereIsSomethingToSave = eventEntry_tagsCurrentlySavedToServerTracker.isDifferent()
+            const thereIsSomethingToSave = eventEntry_tagsCurrentlySavedToServerTracker.isDifferent();
             document.getElementById('event-save').disabled = !thereIsSomethingToSave;
             document.getElementById('event-submit').disabled = !thereIsSomethingToSave;
             document.getElementById('event-edit-cancel').disabled = eventEntry_mode === 'new' && eventEntry_tagsAdded.length === 0 && document.getElementById('event-search').value === '';
@@ -508,13 +508,13 @@ Top priority is quick and easy data entry.
         let eventEntry_tagsAdded;
         const eventEntry_tagsCurrentlySavedToServerTracker = {
             _tags: [],
-            clear: function() {
+            clear: function () {
                 this._tags = [];
             },
-            set: function(tags) {
+            set: function (tags) {
                 this._tags = [...tags];
             },
-            isDifferent: function() {
+            isDifferent: function () {
                 if (this._tags.length !== eventEntry_tagsAdded.length) {
                     return true;
                 }
