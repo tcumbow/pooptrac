@@ -75,7 +75,10 @@ Top priority is quick and easy data entry.
         .top-button {
             /* flex: 1; */
             margin: 0 5px;
-            padding: 10px;
+            padding-left: 0px;
+            padding-right: 0px;
+            padding-top: 10px;
+            padding-bottom: 10px;
             font-size: 1em;
             border-radius: 0px;
             flex: auto;
@@ -329,18 +332,18 @@ Top priority is quick and easy data entry.
 
     <div id="event" class="flex-column no-scroll">
         <div id="top-buttons" class="flex-row no-grow margin-bottom">
-            <button id="event-goto-recent" class="top-button no-grow" onclick="
+            <button id="event-goto-recent" class="top-button" onclick="
                 // Hide the event entry div
                 document.getElementById('event').classList.add('hidden');
                 // Show the recent div
                 document.getElementById('recent').classList.remove('hidden');
                 // Initialize the recent div
                 recent_initialize();
-                ">🗓️History</button>
-            <button id="event-save" class="top-button no-grow" onclick="
+                ">🗓️ History</button>
+            <button id="event-save" class="top-button" onclick="
                 // Save the event
                 eventEntry_save();
-                ">💾Save</button>
+                ">💾 Save</button>
                 <script>
                     async function eventEntry_save() {
                         if (eventEntry_mode === 'new') {
@@ -357,11 +360,11 @@ Top priority is quick and easy data entry.
                         }
                     }
                 </script>
-            <button id="event-edit-cancel" class="top-button no-grow" onclick="
+            <button id="event-edit-cancel" class="top-button" onclick="
                 // Discard changes and return to new mode
                 eventEntry_initialize_new();
-                ">❌Discard</button>
-            <button id="event-submit" class="top-button no-grow" onclick="eventEntry_submit()">💾❌Save+Close</button>
+                ">❌ Discard</button>
+            <button id="event-submit" class="top-button" onclick="eventEntry_submit()">💾❌ Save+Close</button>
                 <script>
                     async function eventEntry_submit() {
                         if (eventEntry_mode === 'new') {
@@ -562,7 +565,7 @@ Top priority is quick and easy data entry.
 
     <div id="recent" class="flex-column hidden no-scroll">
         <div id="recent-top-buttons" class="flex-row no-grow margin-bottom">
-            <button id="recent-goto-event" class="top-button no-grow" onclick="
+            <button id="recent-goto-event" class="top-button" onclick="
                 // Hide the recent div
                 document.getElementById('recent').classList.add('hidden');
                 // Show the event entry div
@@ -570,7 +573,7 @@ Top priority is quick and easy data entry.
                 // Initialize the event entry div
                 eventEntry_initialize_new();
                 ">📝</button>
-            <button id="recent-refresh" class="top-button no-grow" onclick="
+            <button id="recent-refresh" class="top-button" onclick="
                 // Refresh the recent div
                 recent_initialize();
                 ">🔄</button>
