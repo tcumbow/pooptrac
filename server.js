@@ -60,6 +60,17 @@ function saveDb(retries = 0) {
     });
 }
 
+function cleanDbOnStartup() {
+    console.log('running cleanDbOnStartup');
+    db.events.forEach(event => {
+        // remove the 'modified' property from each event
+        delete event.modified;
+    });
+    saveDb();
+    console.log('cleanDbOnStartup has finished');
+}
+// cleanDbOnStartup();
+
 function getNextId(prefix) {
     if (!db.idCounter[prefix]) {
         db.idCounter[prefix] = 1;
@@ -81,7 +92,6 @@ app.post('/api/event', express.json(), (req, res) => {
     }
     newEvent.id = getNextId('event');
     newEvent.created = new Date().toISOString();
-    newEvent.modified = newEvent.created;
     db.events.unshift(newEvent);
     saveDb();
     res.json(newEvent);
@@ -110,7 +120,6 @@ app.put('/api/event/:id', express.json(), (req, res) => {
         return;
     }
     newEvent.created = oldEvent.created;
-    newEvent.modified = new Date().toISOString();
     db.events[eventIndex] = newEvent;
     saveDb();
     res.json(newEvent);
