@@ -247,6 +247,9 @@ function getAllTags() {
 
 function extrapolateTags(tagsList) {
     // to be implemented later, for now, just returns the same list
+    // this function should return a list of tags that includes the original tags, as well as any tags that are implied by the original tags
+    // this will be used eventually to enhance reporting and/or retrofitting of tags
+    // it is currently referenced in the /api/reporting/events route
     return tagsList;
 }
 
