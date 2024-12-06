@@ -100,6 +100,10 @@ Top priority is quick and easy data entry.
             background-color: darkblue;
         }
 
+        .tag-suggestion-required {
+            background-color: darkred;
+        }
+
         .tag-added {
             background-color: darkgreen;
         }
@@ -461,12 +465,27 @@ Top priority is quick and easy data entry.
                     eventTagSuggestions.removeChild(eventTagSuggestions.firstChild);
                 }
             }
-            async function eventEntry_suggestionsDiv_populate(suggestions, highPrioritySuggestions) {
+            async function eventEntry_suggestionsDiv_populate(suggestions, highPrioritySuggestions, requiredSuggestions) {
                 eventEntry_suggestionsDiv_clear();
                 const eventTagSuggestions = document.getElementById("event-tag-suggestions");
+                if (requiredSuggestions) {
+                    for (const suggestion of requiredSuggestions) {
+                        const button = document.createElement("button");
+                        eventTagSuggestions.appendChild(button);
+                        button.classList.add("tag");
+                        button.classList.add("tag-suggestion");
+                        button.classList.add("tag-suggestion-required");
+                        button.undecoratedTag = suggestion;
+                        button.textContent = decorateText(suggestion);
+                        button.onclick = async () => {
+                            eventEntry_tagsAdded_add(suggestion);
+                        };
+                    }
+                }
                 if (highPrioritySuggestions) {
                     for (const suggestion of highPrioritySuggestions) {
                         const button = document.createElement("button");
+                        eventTagSuggestions.appendChild(button);
                         button.classList.add("tag");
                         button.classList.add("tag-suggestion");
                         button.classList.add("tag-suggestion-highpriority");
@@ -475,11 +494,11 @@ Top priority is quick and easy data entry.
                         button.onclick = async () => {
                             eventEntry_tagsAdded_add(suggestion);
                         };
-                        eventTagSuggestions.appendChild(button);
                     }
                 }
                 for (const suggestion of suggestions) {
                     const button = document.createElement("button");
+                    eventTagSuggestions.appendChild(button);
                     button.classList.add("tag");
                     button.classList.add("tag-suggestion");
                     button.undecoratedTag = suggestion;
@@ -487,13 +506,12 @@ Top priority is quick and easy data entry.
                     button.onclick = async () => {
                         eventEntry_tagsAdded_add(suggestion);
                     };
-                    eventTagSuggestions.appendChild(button);
                 }
             }
             async function eventEntry_suggestionsDiv_calculateAndPopulateSuggestions() {
                 const arrayOfTagsAlreadySelected = eventEntry_tagsAdded;
                 const suggestionsFromApiV2 = await getTagSuggestions(arrayOfTagsAlreadySelected);
-                eventEntry_suggestionsDiv_populate(suggestionsFromApiV2.other, suggestionsFromApiV2.best);
+                eventEntry_suggestionsDiv_populate(suggestionsFromApiV2.other, suggestionsFromApiV2.best, suggestionsFromApiV2.required);
             }
         </script>
     </div>

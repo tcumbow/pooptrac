@@ -177,18 +177,116 @@ app.get('/api/tagautocomplete', (req, res) => {
     res.json(Array.from(tagSet));
 });
 
+// Daily required tagsets are sets of tags that are generally mutually exclusive; each day should have one tag from each set
+// For example: ['workday', 'weekend', 'holiday', 'vacation', 'sickday'] or ['pills', 'pills skipped']
+// Once a tagset is used for a day, it should not be suggested again for that day
+// If a tagset has not yet been used on a day, it should be suggested with very high priority
+// It is considered a new day (subjectively speaking) for the starting at 11:00am UTC
+
+function getSubjectiveDayFromDate(date) {
+    // returns an integer representing the local subjective day
+    // the integer is relative to an arbitrary start date--it should only be used for comparison purposes
+    // the arbitrary start date is 11:00am UTC on 2024-11-01
+    // it is considered a new subjective day starting at 11:00am UTC
+    // Examples:
+    // 2024-11-01T11:00:00Z => 0
+    // 2024-11-02T10:59:59Z => 0
+    // 2024-11-02T11:00:00Z => 1
+    // 2024-11-03T10:59:59Z => 1
+
+    const arbitraryStartDate = new Date('2024-11-01T11:00:00Z');
+    const diff = date - arbitraryStartDate;
+    const diffDays = Math.floor(diff / (1000 * 60 * 60 * 24));
+    return diffDays;
+}
+
+// The following is a list of daily required tagsets
+const dailyRequiredTagsets = [
+    ['workday', 'weekend', 'holiday', 'vacation', 'sickday', 'weirdday'],
+    ['pills', 'pills skipped', 'pills SPECIAL'],
+    ['olive antibiotic', 'olive no special meds', 'olive special meds'],
+];
+const flatListOfDailyRequiredTags = flattenTagsets(dailyRequiredTagsets);
+// Tagsets are not treated specially in the db, each tag is applied like any other tag
+
+function getRemainingDailyRequiredTagsetsForADay(date) {
+    // returns an array of daily required tagsets that have not yet been used for the given date
+    const subjectiveDay = getSubjectiveDayFromDate(date);
+    // get an array of all events for the given date (since the db is sorted by most recent first, we can stop when we reach the next day)
+    const eventsForDate = [];
+    for (let i = 0; i < db.events.length; i++) {
+        const event = db.events[i];
+        if (getSubjectiveDayFromDate(new Date(event.created)) === subjectiveDay) {
+            eventsForDate.push(event);
+        } else {
+            break;
+        }
+    }
+    // get a set of all tags used on the given date
+    const tagsUsed = new Set();
+    eventsForDate.forEach(event => event.tags.forEach(tag => tagsUsed.add(tag)));
+    // get the daily required tagsets that have not yet been used
+    const remainingTagsets = dailyRequiredTagsets.filter(tagset => !tagset.some(tag => tagsUsed.has(tag)));
+    return remainingTagsets;
+}
+
+class CachedTagInformationForDate {
+    constructor(date) {
+        this.date = date;
+        this.remainingRequiredDailyTagSets = null;
+        this.remainingRequiredDailyTagsFlatList = null;
+    }
+    getRemainingRequiredDailyTagsets() {
+        if (!this.remainingRequiredDailyTagSets) {
+            this.remainingRequiredDailyTagSets = getRemainingDailyRequiredTagsetsForADay(this.date);
+        }
+        return this.remainingRequiredDailyTagSets;
+    }
+    getRemainingRequiredDailyTagsetsFlatList() {
+        if (!this.remainingRequiredDailyTagsFlatList) {
+            this.remainingRequiredDailyTagsFlatList = flattenTagsets(this.getRemainingRequiredDailyTagsets());
+        }
+        return this.remainingRequiredDailyTagsFlatList;
+    }
+    isTagPossiblyAppropriateForDate(tag) {
+        // this helps to prevent suggesting tags that are part of a required tagset that has already been used for the given date
+        if (flatListOfDailyRequiredTags.includes(tag)) {
+            // the tag is part of a required tagset, so it should only be considered appropriate if it is part of a tagset that has not yet been used for the given date
+            return this.getRemainingRequiredDailyTagsetsFlatList().includes(tag);
+        } else {
+            // the tag is not part of a required tagset, so it might be appropriate
+            return true;
+        }
+    }
+}
+
+function flattenTagsets(tagsets) {
+    // returns a flat array of tags from the given array of tagsets
+    const tags = new Set();
+    tagsets.forEach(tagset => tagset.forEach(tag => tags.add(tag)));
+    return Array.from(tags);
+}
+
 // POST /api/gettagsuggestions
 app.post('/api/gettagsuggestions', express.json(), (req, res) => {
     // accepts a list of tags, searches for events that contain all of those tags, and returns a list of tags that are used in those events
+    // if no tags are provided, returns the most used 'first' tags
+    // returns an object with properties:
+    // required: an array of tags from tagsets that have not yet been used today
+    // best: an array of tags that are a good match for the provided tags
+    // other: all other possible tags, sorted by how well they match the provided tags and then by how recently they were used (since the db is sorted by most recent first)
     const tagsAlreadyChosen = req.body;
+    // TODO: modify this function to accept a date parameter and use that date to determine the daily required tagsets, rather than the current date; we'll need to modify the API call so that body is an object with tagsAlreadyChosen and date properties
     if (!Array.isArray(tagsAlreadyChosen)) {
         res.status(400).json({ error: 'Request body must be an array of tags' });
         return;
     }
     if (tagsAlreadyChosen.length === 0) {
-        const mostUsedFirstTags = getMostUsedFirstTags();
-        const otherTags = getAllTags().filter(tag => !mostUsedFirstTags.includes(tag));
-        res.json({ best: mostUsedFirstTags, other: otherTags });
+        const cachedTagInformation = new CachedTagInformationForDate(new Date());
+        const remainingRequiredDailyTags = cachedTagInformation.getRemainingRequiredDailyTagsetsFlatList();
+        const mostUsedFirstTags = getMostUsedFirstTags().filter(tag => !remainingRequiredDailyTags.includes(tag) && cachedTagInformation.isTagPossiblyAppropriateForDate(tag));
+        const otherTags = getAllTags().filter(tag => !mostUsedFirstTags.includes(tag) && !remainingRequiredDailyTags.includes(tag) && cachedTagInformation.isTagPossiblyAppropriateForDate(tag));
+        res.json({ required: remainingRequiredDailyTags, best: mostUsedFirstTags, other: otherTags });
     } else {
         const eventsByNumberOfTagsInCommonWithTagsAlreadyChosen = {};
         db.events.forEach(event => {
