@@ -275,7 +275,7 @@ app.post('/api/gettagsuggestions', express.json(), (req, res) => {
     // returns an object with properties:
     // required: an array of tags from tagsets that have not yet been used today
     // best: an array of tags that are a good match for the provided tags (they have been used in events that contain ALL of the provided tags)
-    // other: all other possible tags, sorted by how well they match the provided tags and then by how recently they were used (since the db is sorted by most recent first)
+    // other: all other possible tags, sorted first by how well they match the provided tags, then by how often they have been used, and finally by how recently they were used (happens automatically since the db is sorted by most recent first)
     const tagsAlreadyChosen = req.body;
     // TODO: modify this function to accept a date parameter and use that date to determine the daily required tagsets, rather than the current date; we'll need to modify the API call so that body is an object with tagsAlreadyChosen and date properties
     if (!Array.isArray(tagsAlreadyChosen)) {
@@ -289,35 +289,40 @@ app.post('/api/gettagsuggestions', express.json(), (req, res) => {
         const otherTags = getAllTags().filter(tag => !mostUsedFirstTags.includes(tag) && !remainingRequiredDailyTags.includes(tag) && cachedTagInformation.isTagPossiblyAppropriateForDate(tag));
         res.json({ required: remainingRequiredDailyTags, best: mostUsedFirstTags, other: otherTags });
     } else {
-        const eventsByNumberOfTagsInCommonWithTagsAlreadyChosen = {};
+        const byNumberOfTagsInCommonWithTagsAlreadyChosen = {}; // key is number of tags in common, value is another object
+        // the inner object has a key that is the tag and a value that is the number of times that tag has been used in events that have the same number of tags in common with tagsAlreadyChosen
         db.events.forEach(event => {
             const tagsInCommon = event.tags.filter(tag => tagsAlreadyChosen.includes(tag));
             const countOfTagsInCommon = tagsInCommon.length;
-            if (!eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon]) {
-                eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon] = [];
+            if (!byNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon]) {
+                byNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon] = {};
             }
-            eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon].push(event);
-        }
-        );
+            event.tags.forEach(tag => {
+                if (!tagsAlreadyChosen.includes(tag)) {
+                    if (!byNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon][tag]) {
+                        byNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon][tag] = 0;
+                    }
+                    byNumberOfTagsInCommonWithTagsAlreadyChosen[countOfTagsInCommon][tag]++;
+                }
+            });
+        });
         const tagSetBest = new Set();
         const tagSet = new Set();
         for (let i = tagsAlreadyChosen.length; i >= 0; i--) {
-            if (eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[i]) {
-                eventsByNumberOfTagsInCommonWithTagsAlreadyChosen[i].forEach(event => {
-                    event.tags.forEach(tag => {
-                        if (!tagsAlreadyChosen.includes(tag)) {
-                            if (i === tagsAlreadyChosen.length) {
-                                tagSetBest.add(tag);
-                            } else {
-                                if (!tagSetBest.has(tag)) {
-                                    tagSet.add(tag);
-                                }
-                            }
+            if (byNumberOfTagsInCommonWithTagsAlreadyChosen[i]) {
+                const tagsSortedByUsage = Object.keys(byNumberOfTagsInCommonWithTagsAlreadyChosen[i]).sort((a, b) => byNumberOfTagsInCommonWithTagsAlreadyChosen[i][b] - byNumberOfTagsInCommonWithTagsAlreadyChosen[i][a]);
+                tagsSortedByUsage.forEach(tag => {
+                    if (i === tagsAlreadyChosen.length) {
+                        tagSetBest.add(tag);
+                    } else {
+                        if (!tagSetBest.has(tag)) {
+                            tagSet.add(tag);
                         }
-                    });
+                    }
                 });
             }
         }
+
         res.json({ best: Array.from(tagSetBest), other: Array.from(tagSet) });
     }
 });
@@ -382,5 +387,5 @@ app.get('/api/reporting/events', (req, res) => {
 app.use(express.static('public'));
 
 server.listen(3031, () => {
-    console.log('Server started on http://localhost:3031');
+    console.log('Server started on http://localhost:3031/pooptrac.html');
 });
