@@ -269,11 +269,12 @@ function flattenTagsets(tagsets) {
 
 // POST /api/gettagsuggestions
 app.post('/api/gettagsuggestions', express.json(), (req, res) => {
-    // accepts a list of tags, searches for events that contain all of those tags, and returns a list of tags that are used in those events
+    // accepts a list of tags, searches for events that contain all/some of those tags, and returns a list of tags that are used in those events
     // if no tags are provided, returns the most used 'first' tags
+    // if daily required tagsets have not yet been used for the day, they are returned with special priority
     // returns an object with properties:
     // required: an array of tags from tagsets that have not yet been used today
-    // best: an array of tags that are a good match for the provided tags
+    // best: an array of tags that are a good match for the provided tags (they have been used in events that contain ALL of the provided tags)
     // other: all other possible tags, sorted by how well they match the provided tags and then by how recently they were used (since the db is sorted by most recent first)
     const tagsAlreadyChosen = req.body;
     // TODO: modify this function to accept a date parameter and use that date to determine the daily required tagsets, rather than the current date; we'll need to modify the API call so that body is an object with tagsAlreadyChosen and date properties
