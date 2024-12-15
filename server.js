@@ -91,6 +91,7 @@ app.post('/api/event', express.json(), (req, res) => {
         return;
     }
     newEvent.id = getNextId('event');
+    newEvent.tags = extrapolateTags(newEvent.tags);
     newEvent.created = new Date().toISOString();
     db.events.unshift(newEvent);
     saveDb();
@@ -204,7 +205,7 @@ function getSubjectiveDayFromDate(date) {
 const dailyRequiredTagsets = [
     ['workday', 'weekend', 'holiday', 'vacation', 'sickday', 'weirdday'],
     ['pills', 'pills skipped', 'pills SPECIAL'],
-    ['olive antibiotic', 'olive no special meds', 'olive special meds'],
+    ['olive no special meds', 'olive special meds', 'olive clavamox'],
 ];
 const flatListOfDailyRequiredTags = flattenTagsets(dailyRequiredTagsets);
 // Tagsets are not treated specially in the db, each tag is applied like any other tag
@@ -350,10 +351,17 @@ function getAllTags() {
 }
 
 function extrapolateTags(tagsList) {
-    // to be implemented later, for now, just returns the same list
+    // only partially implemented
     // this function should return a list of tags that includes the original tags, as well as any tags that are implied by the original tags
     // this will be used eventually to enhance reporting and/or retrofitting of tags
     // it is currently referenced in the /api/reporting/events route
+    // it is also referenced in the /api/event POST route
+
+    // if any of the tags start with "olive " and the event does not have the "olive" tag, add the "olive" tag as the first tag
+    if (tagsList.some(tag => tag.startsWith('olive ')) && !tagsList.includes('olive')) {
+        tagsList = ['olive', ...tagsList];
+    }
+
     return tagsList;
 }
 
