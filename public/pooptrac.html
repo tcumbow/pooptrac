@@ -602,7 +602,7 @@ Top priority is quick and easy data entry.
     </div>
     <script>
         async function recent_initialize() {
-            const recentEvents = await getEvents(30);
+            const recentEvents = await getEvents(200);
             const recentEventsDiv = document.getElementById("recent-events");
             while (recentEventsDiv.firstChild) {
                 recentEventsDiv.removeChild(recentEventsDiv.firstChild);
