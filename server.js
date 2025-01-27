@@ -375,7 +375,7 @@ function convertTagsArrayToObject(tagsList) {
 app.get('/api/reporting/events', (req, res) => {
     // returns an object optimized for reporting purposes
     const report = {};
-    // create a list of all events with extrapolated tags
+    // create a list of all events and extrapolate tags
     report.events = db.events.map(event => {
         const extrapolatedTags = extrapolateTags(event.tags);
         const objectifiedTags = convertTagsArrayToObject(extrapolatedTags);
@@ -384,6 +384,52 @@ app.get('/api/reporting/events', (req, res) => {
     // create a list of all tags used in events
     const tags = new Set();
     db.events.forEach(event => extrapolateTags(event.tags).forEach(tag => tags.add(tag)));
+    report.tags = Array.from(tags);
+    // include misc stats
+    report.totalEvents = report.events.length;
+    report.totalTags = report.tags.size;
+    report.dateGenerated = new Date().toISOString();
+    res.json(report);
+});
+
+// GET /api/reporting/events_olive
+app.get('/api/reporting/events_olive', (req, res) => {
+    // returns an object optimized for reporting purposes
+    const report = {};
+    // create a list of all events that contain the tag 'olive' and extrapolate tags
+    report.events = db.events
+        .filter(event => event.tags.includes('olive'))
+        .map(event => {
+            const extrapolatedTags = extrapolateTags(event.tags);
+            const objectifiedTags = convertTagsArrayToObject(extrapolatedTags);
+            return { ...event, tags: objectifiedTags };
+        });
+    // create a list of all tags used in events
+    const tags = new Set();
+    db.events.filter(event => event.tags.includes('olive')).forEach(event => extrapolateTags(event.tags).forEach(tag => tags.add(tag)));
+    report.tags = Array.from(tags);
+    // include misc stats
+    report.totalEvents = report.events.length;
+    report.totalTags = report.tags.size;
+    report.dateGenerated = new Date().toISOString();
+    res.json(report);
+});
+
+// GET /api/reporting/events_non_olive
+app.get('/api/reporting/events_non_olive', (req, res) => {
+    // returns an object optimized for reporting purposes
+    const report = {};
+    // create a list of all events that do not contain the tag 'olive' and extrapolate tags
+    report.events = db.events
+        .filter(event => !event.tags.includes('olive'))
+        .map(event => {
+            const extrapolatedTags = extrapolateTags(event.tags);
+            const objectifiedTags = convertTagsArrayToObject(extrapolatedTags);
+            return { ...event, tags: objectifiedTags };
+        });
+    // create a list of all tags used in events
+    const tags = new Set();
+    db.events.filter(event => !event.tags.includes('olive')).forEach(event => extrapolateTags(event.tags).forEach(tag => tags.add(tag)));
     report.tags = Array.from(tags);
     // include misc stats
     report.totalEvents = report.events.length;
